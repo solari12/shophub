@@ -23,6 +23,8 @@ createServer(async (request, response) => {
         ? 'marketplace/cart.html'
       : pathname === '/checkout' || pathname === '/checkout/'
         ? 'marketplace/checkout.html'
+      : pathname === '/account' || pathname === '/account/'
+        ? 'marketplace/account.html'
       : pathname === '/wishlist' || pathname === '/wishlist/'
         ? 'marketplace/wishlist.html'
       : pathname === '/orders' || pathname === '/orders/' || /^\/orders\/[^/]+\/?$/.test(pathname)

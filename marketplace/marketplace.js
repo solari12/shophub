@@ -73,9 +73,9 @@ const card = (p) => `<article class="product-card"><a class="product-image" href
 
 function header(active = '') {
   const language = getLanguage();
-  return `<div class="announcement">A little more good in your everyday <span>Free shipping over $75</span></div><header class="market-header"><div class="header-main"><button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-action="menu">${icon('menu',22)}</button><a class="brand" href="/" aria-label="ShopHub home"><span class="brand-mark"><i></i><i></i><i></i><i></i></span><span>shop<span class="brand-accent">hub</span><span class="brand-period">.</span></span></a><nav class="primary-nav" aria-label="Main navigation"><a class="${active === 'home' ? 'active' : ''}" href="/">Discover</a><a class="${active === 'products' ? 'active' : ''}" href="/products">Shop all</a><a href="/products?category=Home%20%26%20living">Home & living</a><a href="/products?category=Accessories">Accessories</a><a class="nav-deal" href="/products?deal=1">Good deals <span>Fresh</span></a></nav><form class="header-search" action="/products" role="search"><label class="sr-only" for="site-search">Search products and shops</label>${icon('search',19)}<input id="site-search" name="q" type="search" placeholder="Search something lovely…" autocomplete="off"><button type="submit" aria-label="Search">${icon('arrow',17)}</button></form><div class="language-switch" role="group" aria-label="Choose language"><button type="button" data-language="en" aria-label="English language" aria-pressed="${language==='en'}">EN</button><span aria-hidden="true">/</span><button type="button" data-language="vi" aria-label="Vietnamese language" aria-pressed="${language==='vi'}">VI</button></div><div class="header-actions"><a class="action-link dashboard-link" href="/dashboard">My dashboard</a><a class="header-icon wishlist-nav-link" href="/wishlist" aria-label="Wishlist">${icon('heart',20)}</a><a class="header-icon bag-button" href="/cart" aria-label="Shopping bag, ${countCart()} items">${icon('cart',21)}<span class="bag-count">${countCart()}</span></a></div></div><nav class="mobile-nav" aria-label="Mobile navigation"><a href="/">Discover</a><a href="/products">Shop all</a><a href="/products?category=Home%20%26%20living">Home & living</a><a href="/products?category=Accessories">Accessories</a><a href="/dashboard">My dashboard</a><a href="/wishlist">Wishlist</a><a href="/cart">Your cart (${countCart()})</a></nav></header>`;
+  return `<div class="announcement">A little more good in your everyday <span>Free shipping over $75</span></div><header class="market-header"><div class="header-main"><button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-action="menu">${icon('menu',22)}</button><a class="brand" href="/" aria-label="ShopHub home"><span class="brand-mark"><i></i><i></i><i></i><i></i></span><span>shop<span class="brand-accent">hub</span><span class="brand-period">.</span></span></a><nav class="primary-nav" aria-label="Main navigation"><a class="${active === 'home' ? 'active' : ''}" href="/">Discover</a><a class="${active === 'products' ? 'active' : ''}" href="/products">Shop all</a><a href="/products?category=Home%20%26%20living">Home & living</a><a href="/products?category=Accessories">Accessories</a><a class="nav-deal" href="/products?deal=1">Good deals <span>Fresh</span></a></nav><form class="header-search" action="/products" role="search"><label class="sr-only" for="site-search">Search products and shops</label>${icon('search',19)}<input id="site-search" name="q" type="search" placeholder="Search something lovely…" autocomplete="off"><button type="submit" aria-label="Search">${icon('arrow',17)}</button></form><div class="language-switch" role="group" aria-label="Choose language"><button type="button" data-language="en" aria-label="English language" aria-pressed="${language==='en'}">EN</button><span aria-hidden="true">/</span><button type="button" data-language="vi" aria-label="Vietnamese language" aria-pressed="${language==='vi'}">VI</button></div><div class="header-actions"><a class="action-link dashboard-link ${active==='account'?'active':''}" href="/account">My account</a><a class="header-icon wishlist-nav-link" href="/wishlist" aria-label="Wishlist">${icon('heart',20)}</a><a class="header-icon bag-button" href="/cart" aria-label="Shopping bag, ${countCart()} items">${icon('cart',21)}<span class="bag-count">${countCart()}</span></a></div></div><nav class="mobile-nav" aria-label="Mobile navigation"><a href="/">Discover</a><a href="/products">Shop all</a><a href="/products?category=Home%20%26%20living">Home & living</a><a href="/products?category=Accessories">Accessories</a><a class="${active==='account'?'active':''}" href="/account">My account</a><a href="/wishlist">Wishlist</a><a href="/cart">Your cart (${countCart()})</a></nav></header>`;
 }
-function footer() { return `<footer class="site-footer"><a class="brand" href="/"><span class="brand-mark"><i></i><i></i><i></i><i></i></span><span>shop<span class="brand-accent">hub</span><span class="brand-period">.</span></span></a><span>Good finds, from good people.</span><span>© 2026 ShopHub</span><a href="/dashboard">Your account ${icon('arrow',14)}</a></footer>`; }
+function footer() { return `<footer class="site-footer"><a class="brand" href="/"><span class="brand-mark"><i></i><i></i><i></i><i></i></span><span>shop<span class="brand-accent">hub</span><span class="brand-period">.</span></span></a><span>Good finds, from good people.</span><span>© 2026 ShopHub</span><a href="/account">Your account ${icon('arrow',14)}</a></footer>`; }
 function wishlistCount(count) { return `<div class="wishlist-count"><strong>${count}</strong><span>${t('saved products')}</span></div>`; }
 function wishlistContent() {
   const saved=readCart().saved.map(row=>products.find(product=>product.id===row.id)).filter(Boolean);
@@ -158,7 +158,7 @@ function readCheckoutState() {
   const base = defaultCheckoutState();
   try {
     const saved = JSON.parse(sessionStorage.getItem(CHECKOUT_STATE_KEY));
-    return saved ? { ...base, ...saved, addresses: Array.isArray(saved.addresses) && saved.addresses.length ? saved.addresses : base.addresses, shipping: saved.shipping || {} } : base;
+    return saved ? { ...base, ...saved, addresses: Array.isArray(saved.addresses) ? saved.addresses : base.addresses, shipping: saved.shipping || {} } : base;
   } catch { return base; }
 }
 function writeCheckoutState(state) {
@@ -170,6 +170,49 @@ function checkoutShipping(group, method) {
 }
 function checkoutPage() {
   return `${header()}<main class="checkout-page page-width"><div class="checkout-breadcrumb"><a href="/cart">${t('Cart')}</a>${icon('chevron',14)}<span>${t('Checkout')}</span></div><div class="checkout-heading"><div><p class="eyebrow">${t('Secure checkout preview')}</p><h1>${t('Checkout')}</h1></div><nav class="checkout-steps" aria-label="${t('Checkout')}"><span class="checkout-step is-complete"><i>1</i>${t('Cart')}</span><span class="checkout-step-divider"></span><span class="checkout-step is-current"><i>2</i>${t('Checkout')}</span></nav></div><div id="checkout-content">${renderCheckoutContent()}</div></main>${footer()}`;
+}
+const ACCOUNT_STATE_KEY = 'shophub-customer-account-v1';
+const defaultAccountState = () => ({ profile:{name:'Lan Nguyen',email:'lan.nguyen@example.com',phone:'+84 90 1234 567'}, notifications:true, editingProfile:false, addressForm:null });
+const escapeAccountValue = value => String(value??'').replace(/[&<>"']/g,character=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
+function readAccountState() {
+  const base=defaultAccountState();
+  try { const saved=JSON.parse(sessionStorage.getItem(ACCOUNT_STATE_KEY)); return saved?{...base,...saved,profile:Object.fromEntries(Object.entries(base.profile).map(([key,value])=>[key,typeof saved.profile?.[key]==='string'&&saved.profile[key].trim()?saved.profile[key]:value]))}:base; }
+  catch { return base; }
+}
+function writeAccountState(state) { try { sessionStorage.setItem(ACCOUNT_STATE_KEY,JSON.stringify(state)); } catch { /* Keep the account preview usable in memory. */ } }
+function readAccountCheckoutState() {
+  const checkout=readCheckoutState();
+  checkout.addressForm=null;
+  const addresses=Array.isArray(checkout.addresses)?checkout.addresses:[];
+  const chosen=addresses.find(address=>address.isDefault)||addresses[0];
+  checkout.addresses=addresses.map(address=>({...address,isDefault:address.id===chosen?.id}));
+  if(!addresses.some(address=>address.id===checkout.selectedAddress))checkout.selectedAddress=chosen?.id||'';
+  writeCheckoutState(checkout);
+  return checkout;
+}
+function accountAddressForm(checkout, addressState) {
+  if(!addressState.addressForm)return '';
+  const existing=checkout.addresses.find(address=>address.id===addressState.addressForm);
+  const values=existing||{name:'',phone:'',street:'',ward:'',city:''};
+  const makeDefault=existing?Boolean(existing.isDefault):!checkout.addresses.length;
+  return `<form class="account-address-form" id="account-address-form"><div class="account-address-form-heading"><div><p class="eyebrow">${t(existing?'Edit address':'Add address')}</p><h3>${t('Address details')}</h3></div><button type="button" class="account-icon-button" data-account-action="cancel-address" aria-label="${t('Cancel')}">${icon('close',17)}</button></div><div class="account-form-grid"><label><span>${t('Recipient full name')}</span><input name="name" autocomplete="name" value="${escapeAccountValue(values.name)}" required></label><label><span>${t('Phone number')}</span><input name="phone" type="tel" autocomplete="tel" value="${escapeAccountValue(values.phone)}" required></label><label class="account-form-wide"><span>${t('Street address')}</span><input name="street" autocomplete="street-address" value="${escapeAccountValue(values.street)}" required></label><label><span>${t('Ward / district')}</span><input name="ward" value="${escapeAccountValue(values.ward)}" required></label><label><span>${t('City / province')}</span><input name="city" autocomplete="address-level1" value="${escapeAccountValue(values.city)}" required></label></div><label class="account-default-choice"><input type="checkbox" name="makeDefault" ${makeDefault?'checked':''}><span class="account-checkbox"></span>${t('Make default address')}</label><div class="account-form-actions"><button class="button-primary" type="submit">${t('Save address')}</button><button class="button-secondary" type="button" data-account-action="cancel-address">${t('Cancel')}</button></div></form>`;
+}
+function accountContent() {
+  const account=readAccountState();
+  const checkout=readAccountCheckoutState();
+  const profile=account.profile;
+  const orders=readOrders();
+  const savedCount=readCart().saved.filter(item=>products.some(product=>product.id===item.id)).length;
+  const profileSection=account.editingProfile?`<form class="account-profile-form" id="account-profile-form"><label><span>${t('Full name')}</span><input name="name" autocomplete="name" value="${escapeAccountValue(profile.name)}" required></label><label><span>${t('Email address')}</span><input name="email" type="email" autocomplete="email" value="${escapeAccountValue(profile.email)}" required></label><label><span>${t('Phone number')}</span><input name="phone" type="tel" autocomplete="tel" value="${escapeAccountValue(profile.phone)}" required></label><div class="account-form-actions"><button class="button-primary" type="submit">${t('Save changes')}</button><button class="button-secondary" type="button" data-account-action="cancel-profile">${t('Cancel')}</button></div></form>`:`<div class="account-profile-details"><div><span>${t('Full name')}</span><strong>${escapeAccountValue(profile.name)}</strong></div><div><span>${t('Email address')}</span><strong>${escapeAccountValue(profile.email)}</strong></div><div><span>${t('Phone number')}</span><strong>${escapeAccountValue(profile.phone)}</strong></div><button class="account-outline-button" type="button" data-account-action="edit-profile">${icon('edit',15)} ${t('Edit profile')}</button></div>`;
+  const addresses=checkout.addresses.length?`<div class="account-address-list">${checkout.addresses.map(address=>`<article class="account-address-card ${address.isDefault?'is-default':''}"><div class="account-address-card-top"><span class="account-address-label">${t(address.label||'Other')}</span>${address.isDefault?`<span class="account-default-badge">${icon('check',12)} ${t('Default address')}</span>`:''}</div><strong>${escapeAccountValue(address.name)}</strong><span class="account-address-phone">${escapeAccountValue(address.phone)}</span><p>${escapeAccountValue(address.street)}, ${escapeAccountValue(address.ward)}, ${escapeAccountValue(address.city)}</p><div class="account-address-actions"><button type="button" data-account-action="edit-address" data-id="${escapeAccountValue(address.id)}">${t('Edit address')}</button>${!address.isDefault?`<button type="button" data-account-action="set-default" data-id="${escapeAccountValue(address.id)}">${t('Set as default')}</button>`:''}<button class="account-remove-link" type="button" data-account-action="remove-address" data-id="${escapeAccountValue(address.id)}">${t('Remove address')}</button></div></article>`).join('')}</div>`:`<div class="account-address-empty"><span class="account-empty-pin">${icon('pin',20)}</span><div><strong>${t('No saved addresses yet')}</strong><p>${t('Add a delivery address to make checkout quicker.')}</p></div></div>`;
+  return `<section class="account-welcome"><div class="account-welcome-mark">${escapeAccountValue(profile.name.split(/\s+/).map(part=>part[0]).slice(0,2).join('').toUpperCase())}</div><div class="account-welcome-copy"><p class="eyebrow">${t('YOUR SHOPHUB ACCOUNT')}</p><h2>${t('Welcome back, {name}',{name:escapeAccountValue(profile.name)})}</h2><p>${t('Manage your details, delivery addresses, and saved finds.')}</p></div><div class="account-member-chip"><span>${icon('sparkle',15)} ${t('ShopHub member')}</span><small>${t('Member since')} ${t('August 2024')}</small></div></section><section class="account-quick-links" aria-label="${t('Account overview')}"><a class="account-quick-card account-orders-quick" href="/orders"><span class="account-quick-icon">${icon('bag',19)}</span><span><small>${t('Orders')}</small><strong>${orders.length} ${t('recent orders')}</strong></span><span class="account-quick-arrow">${icon('arrow',16)}</span></a><a class="account-quick-card account-wishlist-quick" href="/wishlist"><span class="account-quick-icon">${icon('heart',19)}</span><span><small>${t('Wishlist')}</small><strong>${savedCount} ${t('saved products')}</strong></span><span class="account-quick-arrow">${icon('arrow',16)}</span></a><a class="account-quick-card account-address-quick" href="#account-addresses"><span class="account-quick-icon">${icon('pin',19)}</span><span><small>${t('Delivery addresses')}</small><strong>${checkout.addresses.length} ${t('saved addresses')}</strong></span><span class="account-quick-arrow">${icon('arrow',16)}</span></a></section><div class="account-main-grid"><section class="account-panel account-profile-panel"><div class="account-panel-heading"><span class="account-section-icon">${icon('user',18)}</span><div><p class="eyebrow">${t('Account overview')}</p><h2>${t('Profile information')}</h2></div></div>${profileSection}</section><section class="account-panel account-preferences-panel"><div class="account-panel-heading"><span class="account-section-icon">${icon('settings',18)}</span><div><p class="eyebrow">${t('YOUR SHOPHUB ACCOUNT')}</p><h2>${t('Account preferences')}</h2></div></div><div class="account-preference-row"><span class="account-preference-icon">${icon('globe',17)}</span><span><strong>${t('Language preference')}</strong><small>${t('Change language using the control in the header.')}</small></span><b>${getLanguage()==='vi'?'VI':'EN'}</b></div><label class="account-preference-row account-notification-row"><span class="account-preference-icon">${icon('bell',17)}</span><span><strong>${t('Order updates')}</strong><small>${t('Receive local order and delivery updates in this prototype.')}</small></span><input type="checkbox" data-account-notifications ${account.notifications?'checked':''}><span class="account-toggle" aria-hidden="true"></span></label><p class="account-prototype-note">${icon('info',14)} ${t('Preferences are saved for this browser session only.')}</p></section></div><section class="account-panel account-addresses-panel" id="account-addresses"><div class="account-addresses-heading"><div class="account-panel-heading"><span class="account-section-icon">${icon('pin',18)}</span><div><p class="eyebrow">${t('YOUR DELIVERY DETAILS')}</p><h2>${t('Saved addresses')}</h2></div><span class="account-address-count">${checkout.addresses.length}</span></div><button class="account-add-address" type="button" data-account-action="add-address" ${addressStateOpen(account)?'disabled':''}>${icon('plus',16)} ${t('Add address')}</button></div>${addresses}${accountAddressForm(checkout,account)}</section>`;
+}
+function addressStateOpen(account=readAccountState()) { return Boolean(account.addressForm); }
+function accountPage() {
+  const account=readAccountState();
+  readAccountCheckoutState();
+  document.title=`${t('My account')} — ShopHub`;
+  return `${header('account')}<main class="account-page page-width"><div class="account-breadcrumb"><a href="/">${t('Discover')}</a>${icon('chevron',13)}<span>${t('My account')}</span></div><header class="account-page-heading"><div><p class="eyebrow">${t('YOUR SHOPHUB ACCOUNT')}</p><h1>${t('My account')}</h1></div><a href="/orders">${t('View all orders')} ${icon('arrow',15)}</a></header><div id="account-content">${accountContent()}</div></main>${footer()}`;
 }
 function renderCheckoutContent() {
   const state = readCheckoutState();
@@ -319,7 +362,7 @@ function detail() {
 }
 
 const path = location.pathname; const app = document.querySelector('#app');
-app.innerHTML = path === '/checkout' || path === '/checkout/' ? checkoutPage() : path === '/wishlist' || path === '/wishlist/' ? wishlistPage() : /^\/orders\/[^/]+\/?$/.test(path) ? orderPreviewPage() : path === '/orders' || path === '/orders/' ? orderListPage() : path.startsWith('/products/') ? detail() : path.startsWith('/products') ? listing() : path.startsWith('/cart') ? cartPage() : home();
+app.innerHTML = path === '/checkout' || path === '/checkout/' ? checkoutPage() : path === '/account' || path === '/account/' ? accountPage() : path === '/wishlist' || path === '/wishlist/' ? wishlistPage() : /^\/orders\/[^/]+\/?$/.test(path) ? orderPreviewPage() : path === '/orders' || path === '/orders/' ? orderListPage() : path.startsWith('/products/') ? detail() : path.startsWith('/products') ? listing() : path.startsWith('/cart') ? cartPage() : home();
 const currentLanguage = getLanguage();
 document.documentElement.lang = currentLanguage;
 applyTranslations(app, currentLanguage);
@@ -361,6 +404,7 @@ document.addEventListener('change',e=>{
   if(e.target.matches('[data-shipping]')){const state=readCheckoutState();state.shipping[e.target.dataset.shipping]=e.target.value;writeCheckoutState(state);refreshCheckout();}
   if(e.target.matches('[data-payment]')){const state=readCheckoutState();state.payment=e.target.value;writeCheckoutState(state);refreshCheckout();}
   if(e.target.matches('[name="checkout-address"]')){const state=readCheckoutState();state.selectedAddress=e.target.value;writeCheckoutState(state);refreshCheckout();}
+  if(e.target.matches('[data-account-notifications]')){const account=readAccountState();account.notifications=e.target.checked;writeAccountState(account);}
   if(e.target.matches('[data-select-all],[data-shop-select],[data-item-select]')) {
     const cart=readCart();
     if(e.target.matches('[data-select-all]')) cart.items.forEach(item=>item.selected=e.target.checked);
@@ -371,6 +415,8 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('submit',e=>{
   if(e.target.matches('#orders-search')){e.preventDefault();const query=new FormData(e.target).get('q')?.toString().trim()||'';const params=new URLSearchParams(location.search);query?params.set('q',query):params.delete('q');const next=params.toString();location.href=`/orders${next?`?${next}`:''}`;}
+  if(e.target.matches('#account-profile-form')){e.preventDefault();if(!e.target.reportValidity())return;const account=readAccountState();account.profile={...account.profile,...Object.fromEntries(new FormData(e.target))};account.editingProfile=false;writeAccountState(account);refreshAccount();notify(t('Profile saved'));}
+  if(e.target.matches('#account-address-form')){e.preventDefault();if(!e.target.reportValidity())return;const account=readAccountState();const checkout=readAccountCheckoutState();const values=Object.fromEntries(new FormData(e.target));const makeDefault=values.makeDefault==='on';delete values.makeDefault;const existing=checkout.addresses.find(address=>address.id===account.addressForm);let address;if(existing){Object.assign(existing,values);address=existing;}else{address={...values,id:`address-${Date.now()}`,label:'Other',isDefault:false};checkout.addresses.push(address);}if(makeDefault||!checkout.addresses.some(item=>item.isDefault)){checkout.addresses=checkout.addresses.map(item=>({...item,isDefault:item.id===address.id}));}if(address.isDefault||checkout.addresses.length===1)checkout.selectedAddress=address.id;writeCheckoutState(checkout);account.addressForm=null;writeAccountState(account);refreshAccount();notify(t('Address saved'));}
 });
 function refreshCart(){
   const target=document.querySelector('#cart-content');if(!target)return;
@@ -388,6 +434,7 @@ function refreshWishlist(){
   const count=readCart().saved.filter(row=>products.some(product=>product.id===row.id)).length;
   document.querySelector('#wishlist-count').innerHTML=wishlistCount(count);syncWishlistButtons();refreshBagCount();
 }
+function refreshAccount(){const target=document.querySelector('#account-content');if(!target)return;target.innerHTML=accountContent();applyTranslations(target);}
 function refreshCheckout(){
   const target=document.querySelector('#checkout-content');if(!target)return;
   target.innerHTML=renderCheckoutContent();
@@ -413,6 +460,31 @@ document.addEventListener('click',e=>{
     if(kind==='remove'){cart.saved=cart.saved.filter(row=>row.id!==id);writeCart(cart);refreshWishlist();notify(t('Item removed from your wishlist'));return;}
     if(kind==='add'&&product&&availabilityForProduct(id).status!=='out-of-stock'){addProductToCart(id,1,product.color);refreshWishlist();notify(t('A saved product is ready in your cart.'));return;}
     return;
+  }
+  const accountAction=e.target.closest('[data-account-action]');
+  if(accountAction){
+    const account=readAccountState();
+    const checkout=readAccountCheckoutState();
+    const kind=accountAction.dataset.accountAction;
+    if(kind==='edit-profile')account.editingProfile=true;
+    if(kind==='cancel-profile')account.editingProfile=false;
+    if(kind==='add-address')account.addressForm='new';
+    if(kind==='edit-address')account.addressForm=accountAction.dataset.id;
+    if(kind==='cancel-address')account.addressForm=null;
+    if(kind==='set-default'){
+      checkout.addresses=checkout.addresses.map(address=>({...address,isDefault:address.id===accountAction.dataset.id}));
+      checkout.selectedAddress=accountAction.dataset.id;writeCheckoutState(checkout);notify(t('Default address updated'));
+    }
+    if(kind==='remove-address'){
+      const removing=checkout.addresses.find(address=>address.id===accountAction.dataset.id);
+      checkout.addresses=checkout.addresses.filter(address=>address.id!==accountAction.dataset.id);
+      if(removing?.isDefault&&checkout.addresses.length)checkout.addresses=checkout.addresses.map((address,index)=>({...address,isDefault:index===0}));
+      const fallback=checkout.addresses.find(address=>address.isDefault)||checkout.addresses[0];
+      if(checkout.selectedAddress===accountAction.dataset.id)checkout.selectedAddress=fallback?.id||'';
+      if(account.addressForm===accountAction.dataset.id)account.addressForm=null;
+      writeCheckoutState(checkout);notify(t('Address removed'));
+    }
+    writeAccountState(account);refreshAccount();return;
   }
   const orderFilter=e.target.closest('[data-order-status]');
   if(orderFilter){const params=new URLSearchParams(location.search);params.set('status',orderFilter.dataset.orderStatus);const next=params.toString();location.href=`/orders${next?`?${next}`:''}`;return;}
