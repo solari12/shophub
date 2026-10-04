@@ -183,6 +183,62 @@ function renderCheckoutContent() {
   return `<div class="checkout-layout"><div class="checkout-main-column">${addressSection}${orderSections}${paymentSection}</div>${summarySection}</div>`;
 }
 
+const ORDERS_KEY = 'shophub-orders-v1';
+const orderStatuses = ['all','pending','confirmed','processing','shipping','delivered','cancelled'];
+const sampleOrders = [
+  { id:'SH-260924-5816', checkoutId:'CK-260924-1028', date:'2026-09-24', shop:'North & Tone', status:'shipping', tracking:'NT-8042-7719', items:[{id:'studio-headphones',qty:1,variant:'Sand · Wireless'}] },
+  { id:'SH-260924-5817', checkoutId:'CK-260924-1028', date:'2026-09-24', shop:'Marlow Goods', status:'processing', items:[{id:'everyday-tote',qty:1,variant:'Cognac · Large'},{id:'leather-wallet',qty:1,variant:'Chestnut · Standard'}] },
+  { id:'SH-260922-4301', checkoutId:'CK-260922-7763', date:'2026-09-22', shop:'Sunday Objects', status:'confirmed', items:[{id:'ceramic-vase',qty:2,variant:'Oat · 8.5 in'}] },
+  { id:'SH-260921-2844', checkoutId:'CK-260921-3305', date:'2026-09-21', shop:'Common Ground', status:'pending', items:[{id:'cloud-runner',qty:1,variant:'Chalk · US 8'}] },
+  { id:'SH-260916-9028', checkoutId:'CK-260916-2210', date:'2026-09-16', shop:'Wilder Home', status:'delivered', reviewed:false, items:[{id:'linen-throw',qty:1,variant:'Sage · 55 × 75 in'}] },
+  { id:'SH-260913-1182', checkoutId:'CK-260913-5512', date:'2026-09-13', shop:'Kindred Supply', status:'delivered', reviewed:true, items:[{id:'weekend-sunglasses',qty:1,variant:'Tortoise · Standard'},{id:'bloom-bottle',qty:1,variant:'Clear / moss · 20 oz'}] },
+  { id:'SH-260909-6620', checkoutId:'CK-260909-0418', date:'2026-09-09', shop:'Sunday Objects', status:'cancelled', items:[{id:'pour-over-set',qty:1,variant:'Ivory · Standard'}] },
+  { id:'SH-260903-5177', checkoutId:'CK-260903-8911', date:'2026-09-03', shop:'North & Tone', status:'delivered', reviewed:false, items:[{id:'wireless-speaker',qty:1,variant:'Forest · Standard'}] },
+];
+function readOrders() {
+  try {
+    const saved = sessionStorage.getItem(ORDERS_KEY);
+    if (saved !== null) { const parsed = JSON.parse(saved); return Array.isArray(parsed) ? parsed : []; }
+    sessionStorage.setItem(ORDERS_KEY, JSON.stringify(sampleOrders));
+  } catch { /* The prototype remains usable with its in-memory sample list. */ }
+  return sampleOrders.map(order => ({...order,items:order.items.map(item=>({...item}))}));
+}
+function writeOrders(orders) { try { sessionStorage.setItem(ORDERS_KEY,JSON.stringify(orders)); } catch { /* Local state still updates for this page load. */ } }
+function orderProduct(item) { return products.find(product=>product.id===item.id) || products[0]; }
+function orderTotal(order) { return order.items.reduce((sum,item)=>sum+orderProduct(item).price*item.qty,0); }
+function orderDate(date) { return new Intl.DateTimeFormat(getLanguage()==='vi'?'vi-VN':'en-US',{year:'numeric',month:'short',day:'numeric'}).format(new Date(`${date}T12:00:00`)); }
+function orderStatusLabel(status) { return t(status[0].toUpperCase()+status.slice(1)); }
+function orderLine(order,item,index) {
+  const product=orderProduct(item);
+  return `<div class="orders-item"><a class="orders-item-image" href="/products/${product.id}" tabindex="-1"><img src="${photo(product.image,180)}" alt="${product.alt}" loading="lazy"></a><div class="orders-item-copy"><a class="orders-item-name" href="/products/${product.id}">${product.name}</a><span>${t('Variant')}: ${item.variant}</span><span>${t('Quantity')}: ${item.qty}</span></div><div class="orders-item-price"><small>${t('Unit price')}</small><strong>${dollars(product.price)}</strong><span>${t('Line total')}: ${dollars(product.price*item.qty)}</span></div></div>`;
+}
+function renderOrderCard(order) {
+  const total=orderTotal(order); const itemCount=order.items.reduce((sum,item)=>sum+item.qty,0);
+  const actions=[];
+  actions.push(`<a class="orders-action orders-action-secondary" href="/orders/${encodeURIComponent(order.id)}">${t('View order')}</a>`);
+  if(order.status==='shipping') actions.push(`<button class="orders-action orders-action-secondary" type="button" data-order-action="track" data-id="${order.id}">${t('Track order')}</button>`);
+  if(['pending','confirmed'].includes(order.status)) actions.push(`<button class="orders-action orders-action-quiet" type="button" data-order-action="cancel" data-id="${order.id}">${t('Cancel order')}</button>`);
+  if(order.status==='delivered') {
+    actions.push(`<button class="orders-action orders-action-secondary" type="button" data-order-action="buy-again" data-id="${order.id}">${t('Buy again')}</button>`);
+    actions.push(`<button class="orders-action orders-action-quiet" type="button" data-order-action="review" data-id="${order.id}" ${order.reviewed?'disabled':''}>${t(order.reviewed?'Review submitted':'Leave a review')}</button>`);
+  }
+  return `<article class="orders-card"><div class="orders-card-head"><div class="orders-id-block"><span class="orders-label">${t('Order ID')}</span><a href="/orders/${encodeURIComponent(order.id)}" class="orders-id">${order.id}</a><span class="orders-date">${t('Placed on')} ${orderDate(order.date)}</span></div><span class="orders-status orders-status-${order.status}"><i></i>${orderStatusLabel(order.status)}</span></div><div class="orders-shop-row"><span class="orders-shop-avatar">${order.shop.slice(0,1)}</span><a href="/products?shop=${encodeURIComponent(order.shop)}">${order.shop}</a><span class="orders-shop-caption">${t('Seller order')}</span><span class="orders-checkout-ref">${t('Checkout')}: ${order.checkoutId}</span></div><div class="orders-items">${order.items.map((item,index)=>orderLine(order,item,index)).join('')}</div><div class="orders-card-total"><span>${itemCount} ${t(itemCount===1?'item':'items')} · ${t('Order total')}</span><strong>${dollars(total)}</strong></div><div class="orders-card-foot"><small>${t('Packed and shipped by')} ${order.shop}</small><div class="orders-actions">${actions.join('')}</div></div></article>`;
+}
+function ordersEmpty(noOrders=false) {
+  return `<section class="orders-empty"><span class="orders-empty-icon">${icon(noOrders?'bag':'search',26)}</span><p class="eyebrow">${noOrders?t('A fresh start'):t('No matches found')}</p><h2>${t(noOrders?'No orders yet':'No orders match your search')}</h2><p>${t(noOrders?'Your ShopHub orders will show up here once you find something you love.':'Try another order ID, product, shop, or status filter.')}</p>${noOrders?`<button class="button-primary" type="button" data-order-action="restore-samples">${t('Restore sample orders')}</button>`:`<button class="orders-action orders-action-secondary" type="button" data-order-action="clear-search">${t('Clear search and filters')}</button>`}<a class="orders-empty-link" href="/products">${t('Return to shopping')} ${icon('arrow',15)}</a></section>`;
+}
+function orderListPage() {
+  const orders=readOrders(); const params=new URLSearchParams(location.search); const active=params.get('status')||'all'; const query=params.get('q')||'';
+  const matched=orders.filter(order=>(active==='all'||order.status===active)&&(!query||`${order.id} ${order.checkoutId} ${order.shop} ${order.items.map(item=>orderProduct(item).name).join(' ')}`.toLowerCase().includes(query.toLowerCase()))).sort((a,b)=>b.date.localeCompare(a.date));
+  document.title=`${t('My Orders')} — ShopHub`;
+  return `${header()}<main class="orders-page page-width"><div class="orders-crumb"><a href="/">${t('Discover')}</a>${icon('chevron',13)}<span>${t('My Orders')}</span></div><section class="orders-heading"><div><p class="eyebrow">${t('YOUR SHOPHUB ACCOUNT')}</p><h1>${t('My Orders')}</h1><p>${t('Every shop sends its own order, so each one has its own updates.')}</p></div><div class="orders-count"><strong>${orders.length}</strong><span>${t(orders.length===1?'order':'orders')} ${t('in your history')}</span></div></section><section class="orders-tools" aria-label="${t('Order search and filters')}"><form class="orders-search" id="orders-search" role="search">${icon('search',18)}<label class="sr-only" for="order-query">${t('Search orders')}</label><input id="order-query" name="q" type="search" value="${query.replaceAll('&','&amp;').replaceAll('"','&quot;')}" placeholder="${t('Search by order ID, product, or shop')}" autocomplete="off"><button type="submit">${t('Search')}</button>${query?`<button class="orders-search-clear" type="button" data-order-action="clear-search" aria-label="${t('Clear search')}">${icon('close',15)}</button>`:''}</form><div class="orders-status-filter" role="group" aria-label="${t('Filter orders by status')}">${orderStatuses.map(status=>{const count=status==='all'?orders.length:orders.filter(order=>order.status===status).length;return `<button type="button" class="orders-filter ${active===status?'is-active':''}" data-order-status="${status}" aria-pressed="${active===status}">${t(status==='all'?'All orders':status[0].toUpperCase()+status.slice(1))}<span>${count}</span></button>`;}).join('')}</div></section><div class="orders-results-heading"><h2>${active==='all'?t('Recent orders'):orderStatusLabel(active)}</h2><span>${matched.length} ${t(matched.length===1?'order':'orders')}</span></div><section class="orders-list" aria-live="polite">${orders.length===0?ordersEmpty(true):matched.length?matched.map(renderOrderCard).join(''):ordersEmpty(false)}</section><div class="orders-bottom-link"><span>${t('Need something else?')}</span><a href="/cart">${t('Go to your cart')} ${icon('arrow',14)}</a><a href="/products">${t('Keep shopping')} ${icon('arrow',14)}</a></div></main>${footer()}`;
+}
+function orderPreviewPage() {
+  const id=decodeURIComponent(location.pathname.split('/').filter(Boolean).at(-1)); const order=readOrders().find(entry=>entry.id===id);
+  document.title=`${t('Order details')} — ShopHub`;
+  return `${header()}<main class="order-preview-page page-width"><a href="/orders" class="order-preview-back">${icon('arrow',15)} ${t('Back to My Orders')}</a><section class="orders-empty"><span class="orders-empty-icon">${icon('bag',26)}</span><p class="eyebrow">${t('Order details')}</p><h1>${order?t('Order detail preview'):t('Order not found')}</h1><p>${order?`${t('Order ID')}: ${order.id}. ${t('Full order details are coming soon.')}`:t('This order is not in your current sample order history.')}</p><a class="button-primary order-preview-button" href="/orders">${t('Back to My Orders')}</a></section></main>${footer()}`;
+}
+
 function detail() {
   const id = decodeURIComponent(location.pathname.split('/').filter(Boolean).at(-1)); const p = products.find(x=>x.id===id) || products[0]; document.title = `${p.name} — ShopHub`;
   return `${header()}<main class="detail-main page-width"><div class="breadcrumbs"><a href="/">Discover</a>${icon('chevron',14)}<a href="/products?category=${encodeURIComponent(p.category)}">${p.category}</a>${icon('chevron',14)}<span>${p.name}</span></div><section class="detail-layout"><div class="gallery"><div class="gallery-main"><img id="main-image" src="${photo(p.image,1200)}" alt="${p.alt}"><span class="product-flag">${p.flag}</span><button class="gallery-save save-button" type="button" data-action="save" data-name="${p.name}" aria-pressed="false" aria-label="Save ${p.name}">${icon('heart',19)}</button></div><div class="gallery-thumbs"><button class="thumb is-active" data-image="${photo(p.image,1200)}" aria-label="View product image 1"><img src="${photo(p.image,180)}" alt=""></button><button class="thumb" data-image="${photo('photo-1523275335684-37898b6baf30',1200)}" aria-label="View product image 2"><img src="${photo('photo-1523275335684-37898b6baf30',180)}" alt=""></button><button class="thumb" data-image="${photo('photo-1526170375885-4d8ecf77b99f',1200)}" aria-label="View product image 3"><img src="${photo('photo-1526170375885-4d8ecf77b99f',180)}" alt=""></button><button class="thumb" data-image="${photo('photo-1490312278390-ab64016e0aa9',1200)}" aria-label="View product image 4"><img src="${photo('photo-1490312278390-ab64016e0aa9',180)}" alt=""></button></div><div class="gallery-caption">${icon('sparkle',15)} A real little something, chosen with care.</div></div>
@@ -193,7 +249,7 @@ function detail() {
 }
 
 const path = location.pathname; const app = document.querySelector('#app');
-app.innerHTML = path === '/checkout' || path === '/checkout/' ? checkoutPage() : path.startsWith('/products/') ? detail() : path.startsWith('/products') ? listing() : path.startsWith('/cart') ? cartPage() : home();
+app.innerHTML = path === '/checkout' || path === '/checkout/' ? checkoutPage() : /^\/orders\/[^/]+\/?$/.test(path) ? orderPreviewPage() : path === '/orders' || path === '/orders/' ? orderListPage() : path.startsWith('/products/') ? detail() : path.startsWith('/products') ? listing() : path.startsWith('/cart') ? cartPage() : home();
 const currentLanguage = getLanguage();
 document.documentElement.lang = currentLanguage;
 applyTranslations(app, currentLanguage);
@@ -239,6 +295,9 @@ document.addEventListener('change',e=>{
     writeCart(cart);refreshCart();
   }
 });
+document.addEventListener('submit',e=>{
+  if(e.target.matches('#orders-search')){e.preventDefault();const query=new FormData(e.target).get('q')?.toString().trim()||'';const params=new URLSearchParams(location.search);query?params.set('q',query):params.delete('q');const next=params.toString();location.href=`/orders${next?`?${next}`:''}`;}
+});
 function refreshCart(){
   const target=document.querySelector('#cart-content');if(!target)return;
   target.innerHTML=renderCartContent();
@@ -267,6 +326,23 @@ if(path === '/checkout' || path === '/checkout/')refreshCheckout();
 document.addEventListener('click',e=>{
   const languageButton=e.target.closest('[data-language]');
   if(languageButton){setLanguage(languageButton.dataset.language);location.reload();return;}
+  const orderFilter=e.target.closest('[data-order-status]');
+  if(orderFilter){const params=new URLSearchParams(location.search);params.set('status',orderFilter.dataset.orderStatus);const next=params.toString();location.href=`/orders${next?`?${next}`:''}`;return;}
+  const orderAction=e.target.closest('[data-order-action]');
+  if(orderAction){
+    const orders=readOrders();const order=orders.find(row=>row.id===orderAction.dataset.id);const kind=orderAction.dataset.orderAction;
+    if(kind==='clear-search'){location.href='/orders';return;}
+    if(kind==='restore-samples'){writeOrders(sampleOrders);location.href='/orders';return;}
+    if(!order)return;
+    if(kind==='cancel'&&['pending','confirmed'].includes(order.status)){order.status='cancelled';writeOrders(orders);location.reload();return;}
+    if(kind==='track'&&order.status==='shipping'){notify(`${t('Tracking preview')}: ${order.tracking||order.id}`);return;}
+    if(kind==='review'&&order.status==='delivered'&&!order.reviewed){order.reviewed=true;writeOrders(orders);location.reload();return;}
+    if(kind==='buy-again'&&order.status==='delivered'){
+      const cart=readCart();
+      order.items.forEach(row=>{const existing=cart.items.find(item=>item.id===row.id);if(existing){existing.qty=Math.min(99,existing.qty+row.qty);existing.selected=true;}else cart.items.push({id:row.id,qty:row.qty,selected:true,variant:row.variant});});
+      writeCart(cart);location.href='/cart';return;
+    }
+  }
   const checkoutAction=e.target.closest('[data-checkout-action]');
   if(checkoutAction){
     const checkoutState=readCheckoutState();
