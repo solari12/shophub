@@ -1,4 +1,5 @@
 import { icon } from '../src/components.js';
+import { applyTranslations, getLanguage, localizedDescription, localizedPageTitle, setLanguage, t, translateText } from './i18n.js';
 
 const products = [
   { id: 'studio-headphones', name: 'Studio Wireless Headphones', category: 'Tech & audio', shop: 'North & Tone', price: 89, old: 119, rating: '4.9', reviews: 248, flag: 'Bestseller', color: 'Sand', image: 'photo-1505740420928-5e560c06d30e', alt: 'Warm tan wireless headphones on a pale background', detail: 'Thoughtful sound for everywhere. These beautifully balanced wireless headphones pair soft memory-foam cushions with 40 hours of listening time, so the soundtrack goes as far as you do.', specs: [['Listening time','Up to 40 hours'],['Connection','Bluetooth 5.3'],['Finish','Sandstone'],['Warranty','2 years']] },
@@ -54,7 +55,8 @@ function refreshBagCount() {
 const card = (p) => `<article class="product-card"><a class="product-image" href="/products/${p.id}" aria-label="View ${p.name}"><img src="${photo(p.image)}" alt="${p.alt}" loading="lazy"><span class="product-flag">${p.flag}</span></a><button class="save-button" type="button" data-action="save" data-name="${p.name}" data-id="${p.id}" aria-label="Save ${p.name}" aria-pressed="false">${icon('heart',18)}</button><div class="product-info"><a href="/products/${p.id}" class="product-title">${p.name}</a><a class="product-shop" href="/products?shop=${encodeURIComponent(p.shop)}">${p.shop} <span aria-label="Verified shop">✓</span></a><div class="price-row"><span class="price">${dollars(p.price)}</span>${p.old ? `<s>${dollars(p.old)}</s>` : ''}<span class="rating">${icon('star',14)} ${p.rating}</span></div><button class="quick-add" type="button" data-action="add" data-name="${p.name}" data-id="${p.id}">${icon('plus',16)} Add to bag</button></div></article>`;
 
 function header(active = '') {
-  return `<div class="announcement">A little more good in your everyday <span>Free shipping over $75</span></div><header class="market-header"><div class="header-main"><button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-action="menu">${icon('menu',22)}</button><a class="brand" href="/" aria-label="ShopHub home"><span class="brand-mark"><i></i><i></i><i></i><i></i></span><span>shop<span class="brand-accent">hub</span><span class="brand-period">.</span></span></a><nav class="primary-nav" aria-label="Main navigation"><a class="${active === 'home' ? 'active' : ''}" href="/">Discover</a><a class="${active === 'products' ? 'active' : ''}" href="/products">Shop all</a><a href="/products?category=Home%20%26%20living">Home & living</a><a href="/products?category=Accessories">Accessories</a><a class="nav-deal" href="/products?deal=1">Good deals <span>Fresh</span></a></nav><form class="header-search" action="/products" role="search"><label class="sr-only" for="site-search">Search products and shops</label>${icon('search',19)}<input id="site-search" name="q" type="search" placeholder="Search something lovely…" autocomplete="off"><button type="submit" aria-label="Search">${icon('arrow',17)}</button></form><div class="header-actions"><a class="action-link dashboard-link" href="/dashboard">My dashboard</a><button class="header-icon" type="button" aria-label="Wishlist preview" data-action="wishlist">${icon('heart',20)}</button><a class="header-icon bag-button" href="/cart" aria-label="Shopping bag, ${countCart()} items">${icon('cart',21)}<span class="bag-count">${countCart()}</span></a></div></div><nav class="mobile-nav" aria-label="Mobile navigation"><a href="/">Discover</a><a href="/products">Shop all</a><a href="/products?category=Home%20%26%20living">Home & living</a><a href="/products?category=Accessories">Accessories</a><a href="/dashboard">My dashboard</a><a href="/cart">Your cart (${countCart()})</a></nav></header>`;
+  const language = getLanguage();
+  return `<div class="announcement">A little more good in your everyday <span>Free shipping over $75</span></div><header class="market-header"><div class="header-main"><button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-action="menu">${icon('menu',22)}</button><a class="brand" href="/" aria-label="ShopHub home"><span class="brand-mark"><i></i><i></i><i></i><i></i></span><span>shop<span class="brand-accent">hub</span><span class="brand-period">.</span></span></a><nav class="primary-nav" aria-label="Main navigation"><a class="${active === 'home' ? 'active' : ''}" href="/">Discover</a><a class="${active === 'products' ? 'active' : ''}" href="/products">Shop all</a><a href="/products?category=Home%20%26%20living">Home & living</a><a href="/products?category=Accessories">Accessories</a><a class="nav-deal" href="/products?deal=1">Good deals <span>Fresh</span></a></nav><form class="header-search" action="/products" role="search"><label class="sr-only" for="site-search">Search products and shops</label>${icon('search',19)}<input id="site-search" name="q" type="search" placeholder="Search something lovely…" autocomplete="off"><button type="submit" aria-label="Search">${icon('arrow',17)}</button></form><div class="language-switch" role="group" aria-label="Choose language"><button type="button" data-language="en" aria-label="English language" aria-pressed="${language==='en'}">EN</button><span aria-hidden="true">/</span><button type="button" data-language="vi" aria-label="Vietnamese language" aria-pressed="${language==='vi'}">VI</button></div><div class="header-actions"><a class="action-link dashboard-link" href="/dashboard">My dashboard</a><button class="header-icon" type="button" aria-label="Wishlist preview" data-action="wishlist">${icon('heart',20)}</button><a class="header-icon bag-button" href="/cart" aria-label="Shopping bag, ${countCart()} items">${icon('cart',21)}<span class="bag-count">${countCart()}</span></a></div></div><nav class="mobile-nav" aria-label="Mobile navigation"><a href="/">Discover</a><a href="/products">Shop all</a><a href="/products?category=Home%20%26%20living">Home & living</a><a href="/products?category=Accessories">Accessories</a><a href="/dashboard">My dashboard</a><a href="/cart">Your cart (${countCart()})</a></nav></header>`;
 }
 function footer() { return `<footer class="site-footer"><a class="brand" href="/"><span class="brand-mark"><i></i><i></i><i></i><i></i></span><span>shop<span class="brand-accent">hub</span><span class="brand-period">.</span></span></a><span>Good finds, from good people.</span><span>© 2026 ShopHub</span><a href="/dashboard">Your account ${icon('arrow',14)}</a></footer>`; }
 function sectionTitle(kicker, title, href = '/products', label = 'Explore all') { return `<div class="section-title"><div><p class="eyebrow">${kicker}</p><h2>${title}</h2></div><a class="text-link" href="${href}">${label} ${icon('arrow',16)}</a></div>`; }
@@ -117,6 +119,70 @@ function cartPage() {
   return `${header()}<main class="cart-main page-width"><div class="breadcrumbs"><a href="/">Discover</a>${icon('chevron',14)}<span>Your cart</span></div><section class="cart-intro"><div><p class="eyebrow">YOUR SHOPHUB BAG</p><h1>A few good finds.</h1><p>Picked from thoughtful shops, ready for your home.</p></div><div class="cart-trust">${icon('check',18)} <span>Every purchase supports an independent shop</span></div></section><div class="cart-title-row"><div><h2>Your cart <span id="cart-line-count">${count}</span></h2><p>Products from a few good people.</p></div><a href="/products">Keep shopping ${icon('arrow',15)}</a></div><div id="cart-content">${renderCartContent()}</div></main>${footer()}`;
 }
 
+const CHECKOUT_STATE_KEY = 'shophub-checkout-state-v1';
+const defaultCheckoutState = () => ({
+  addresses: [
+    { id: 'home', label: 'Home', name: 'Lan Nguyen', phone: '+84 90 1234 567', street: '21 Nguyen Hue Street', ward: 'Ben Nghe Ward, District 1', city: 'Ho Chi Minh City' },
+    { id: 'office', label: 'Office', name: 'Minh Tran', phone: '+84 90 222 1075', street: '14 Le Loi Street', ward: 'Ben Thanh Ward, District 1', city: 'Ho Chi Minh City' },
+  ], selectedAddress: 'home', addressForm: null, shipping: {}, payment: 'cod', success: false,
+});
+function readCheckoutState() {
+  const base = defaultCheckoutState();
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(CHECKOUT_STATE_KEY));
+    return saved ? { ...base, ...saved, addresses: Array.isArray(saved.addresses) && saved.addresses.length ? saved.addresses : base.addresses, shipping: saved.shipping || {} } : base;
+  } catch { return base; }
+}
+function writeCheckoutState(state) {
+  try { sessionStorage.setItem(CHECKOUT_STATE_KEY, JSON.stringify(state)); } catch { /* Keep the checkout usable for this page load. */ }
+}
+function checkoutShipping(group, method) {
+  if (method === 'express') return 9.95;
+  return group.subtotal >= 75 ? 0 : 5.95;
+}
+function checkoutPage() {
+  return `${header()}<main class="checkout-page page-width"><div class="checkout-breadcrumb"><a href="/cart">${t('Cart')}</a>${icon('chevron',14)}<span>${t('Checkout')}</span></div><div class="checkout-heading"><div><p class="eyebrow">${t('Secure checkout preview')}</p><h1>${t('Checkout')}</h1></div><nav class="checkout-steps" aria-label="${t('Checkout')}"><span class="checkout-step is-complete"><i>1</i>${t('Cart')}</span><span class="checkout-step-divider"></span><span class="checkout-step is-current"><i>2</i>${t('Checkout')}</span></nav></div><div id="checkout-content">${renderCheckoutContent()}</div></main>${footer()}`;
+}
+function renderCheckoutContent() {
+  const state = readCheckoutState();
+  const cart = readCart();
+  const cartSummary = cartTotals(cart);
+  const groups = cartSummary.groups.filter(group => group.items.length).map((group, index) => ({
+    ...group,
+    key: `shop-${index}`,
+    method: state.shipping[group.shop] || 'standard',
+    shipping: checkoutShipping(group, state.shipping[group.shop] || 'standard'),
+  }));
+  const selectedAddress = state.addresses.find(address => address.id === state.selectedAddress);
+  const shippingTotal = groups.reduce((sum, group) => sum + group.shipping, 0);
+  const voucherTotal = groups.reduce((sum, group) => sum + (cart.vouchers.includes(group.shop) && group.subtotal >= 80 ? group.subtotal * .1 : 0), 0);
+  const grandTotal = Math.max(0, cartSummary.subtotal - cartSummary.compare - voucherTotal + shippingTotal);
+
+  if (!cartSummary.selected.length) return `<section class="checkout-empty"><span class="checkout-empty-icon">${icon('cart',27)}</span><p class="eyebrow">${t('Checkout')}</p><h2>${t('Checkout is unavailable')}</h2><p>${t('Choose at least one cart item to continue.')}</p><a class="button-primary" href="/cart">${t('Return to cart')} ${icon('arrow',16)}</a></section>`;
+  if (state.success) return `<section class="checkout-success"><span class="checkout-success-icon">${icon('check',28)}</span><p class="eyebrow">${t('Secure checkout preview')}</p><h2>${t('Checkout preview complete')}</h2><p>${t('Your checkout preview is ready.')}</p><div class="checkout-success-note">${t('No order was created and no payment was taken.')}</div><div class="checkout-success-meta"><span>${t('Order details by shop')}</span><strong>${groups.length} ${t(groups.length === 1 ? '1 shop' : 'shops')} · ${cartSummary.units} ${t('items')}</strong></div><a class="button-primary" href="/products">${t('Continue exploring')} ${icon('arrow',16)}</a><a class="checkout-return-link" href="/cart">${t('Back to cart')}</a></section>`;
+
+  const addressForm = state.addressForm ? (() => {
+    const existing = state.addresses.find(address => address.id === state.addressForm);
+    const values = existing || { name: '', phone: '', street: '', ward: '', city: '' };
+    return `<form class="checkout-address-form" id="checkout-address-form"><label><span>${t('Recipient full name')}</span><input name="name" autocomplete="name" value="${values.name}" required></label><label><span>${t('Phone number')}</span><input name="phone" type="tel" autocomplete="tel" value="${values.phone}" required></label><label class="address-wide"><span>${t('Street address')}</span><input name="street" autocomplete="street-address" value="${values.street}" required></label><label><span>${t('Ward / district')}</span><input name="ward" value="${values.ward}" required></label><label><span>${t('City / province')}</span><input name="city" autocomplete="address-level1" value="${values.city}" required></label><div class="address-form-actions"><button class="button-primary" type="button" data-checkout-action="save-address">${t('Save address')}</button><button class="button-secondary" type="button" data-checkout-action="cancel-address">${t('Cancel')}</button></div></form>`;
+  })() : `<div class="checkout-address-list">${state.addresses.map(address => `<article class="checkout-address-card ${address.id === state.selectedAddress ? 'is-selected' : ''}"><label class="checkout-address-choice"><input type="radio" name="checkout-address" value="${address.id}" ${address.id === state.selectedAddress ? 'checked' : ''}><span class="checkout-radio"></span><span class="checkout-address-copy"><strong>${address.name}</strong><span>${address.phone}</span><span>${address.street}, ${address.ward}, ${address.city}</span></span></label><span class="checkout-address-label">${t(address.label)}</span><button class="checkout-address-edit" type="button" data-checkout-action="edit-address" data-id="${address.id}" aria-label="${t('Edit address')}: ${address.name}">${t('Edit address')}</button></article>`).join('')}<button class="checkout-add-address" type="button" data-checkout-action="add-address">${icon('plus',17)} ${t('Add a new address')}</button></div>`;
+
+  const addressSection = `<section class="checkout-section"><div class="checkout-section-heading"><span class="checkout-section-number">01</span><div><h2>${t('Shipping details')}</h2><p>${t('Choose a delivery address')}</p></div></div>${addressForm}</section>`;
+  const orderSections = `<section class="checkout-section"><div class="checkout-section-heading"><span class="checkout-section-number">02</span><div><h2>${t('Your order')}</h2><p>${t('Only items selected in your cart are included.')}</p></div><a class="checkout-edit-cart" href="/cart">${t('Back to cart')}</a></div><div class="checkout-shop-groups">${groups.map(group => {
+    const voucherActive = cart.vouchers.includes(group.shop);
+    const voucherEligible = group.shop === 'Sunday Objects' && group.subtotal >= 80;
+    return `<section class="checkout-shop-group"><header class="checkout-shop-heading"><span class="shop-avatar">${group.shop.split(' ').map(part => part[0]).join('').slice(0,2)}</span><div><a href="/products?shop=${encodeURIComponent(group.shop)}">${group.shop} ${icon('external',13)}</a><small>${t('Verified independent shop')}</small></div><span class="checkout-shop-count">${group.items.reduce((sum, row) => sum + row.item.qty, 0)} ${t('items')}</span></header><div class="checkout-products">${group.items.map(({ item, product }) => `<article class="checkout-line"><img src="${photo(product.image,180)}" alt="${product.alt}"><div class="checkout-product-copy"><strong>${product.name}</strong><span>${item.variant}</span><small>${t('Unit price')}: ${dollars(product.price)}${product.old ? ` <s>${dollars(product.old)}</s>` : ''}</small></div><div class="checkout-quantity"><span>${t('Quantity')}</span><div class="quantity-control"><button type="button" aria-label="Decrease ${product.name} quantity" data-checkout-action="quantity" data-id="${product.id}" data-delta="-1" ${item.qty <= 1 ? 'disabled' : ''}>−</button><output>${item.qty}</output><button type="button" aria-label="Increase ${product.name} quantity" data-checkout-action="quantity" data-id="${product.id}" data-delta="1" ${item.qty >= 99 ? 'disabled' : ''}>+</button></div></div><div class="checkout-line-total"><span>${t('Line total')}</span><strong>${dollars(product.price * item.qty)}</strong></div></article>`).join('')}</div><div class="checkout-shipping"><div class="checkout-subhead"><strong>${t('Shipping method')}</strong><small>${t('Delivery option')}</small></div><div class="checkout-shipping-options"><label class="checkout-option ${group.method === 'standard' ? 'is-selected' : ''}"><input type="radio" name="${group.key}-shipping" value="standard" data-shipping="${group.shop}" ${group.method === 'standard' ? 'checked' : ''}><span class="checkout-radio"></span><span><strong>${t('Standard delivery')}</strong><small>${t('Arrives in 3–5 business days')}</small></span><b>${group.subtotal >= 75 ? t('Free') : dollars(5.95)}</b></label><label class="checkout-option ${group.method === 'express' ? 'is-selected' : ''}"><input type="radio" name="${group.key}-shipping" value="express" data-shipping="${group.shop}" ${group.method === 'express' ? 'checked' : ''}><span class="checkout-radio"></span><span><strong>${t('Express delivery')}</strong><small>${t('Arrives in 1–2 business days')}</small></span><b>${dollars(9.95)}</b></label></div></div>${group.shop === 'Sunday Objects' ? `<div class="checkout-voucher ${voucherActive && voucherEligible ? 'is-applied' : ''}"><span class="voucher-icon">${icon('gift',17)}</span><div><strong>${t('Shop voucher')}</strong><small>${voucherEligible ? t('10% off when you spend $80') : t('Spend $80 or more to use this voucher.')}</small><span class="checkout-voucher-state">${voucherActive && voucherEligible ? t('Voucher applied') : t('Not applied')}</span></div><button type="button" data-checkout-action="voucher" data-shop="${group.shop}" ${voucherEligible || voucherActive ? '' : 'disabled'}>${voucherActive ? t('Remove voucher') : t('Apply voucher')}</button></div>` : ''}</section>`;
+  }).join('')}</div></section>`;
+  const paymentSection = `<section class="checkout-section"><div class="checkout-section-heading"><span class="checkout-section-number">03</span><div><h2>${t('Payment method')}</h2><p>${t('Review your selections before placing this demo order.')}</p></div></div><div class="checkout-payment-options">${[
+    ['cod','card','Cash on Delivery','Pay when your order arrives.'],
+    ['card','card','Mock card payment','Demo only — no card details needed.'],
+    ['wallet','bag','Mock e-wallet','Demo only — no wallet connection.'],
+  ].map(([value, iconName, label, description]) => `<label class="checkout-payment-option ${state.payment === value ? 'is-selected' : ''}"><input type="radio" name="payment-method" value="${value}" data-payment ${state.payment === value ? 'checked' : ''}><span class="checkout-radio"></span><span class="checkout-payment-icon">${icon(iconName,19)}</span><span><strong>${t(label)}</strong><small>${t(description)}</small></span></label>`).join('')}</div></section>`;
+  const addressReady = selectedAddress && ['name','phone','street','ward','city'].every(key => selectedAddress[key]?.trim());
+  const summarySection = `<aside class="checkout-summary"><div class="checkout-summary-heading"><div><p class="eyebrow">${t('Secure checkout preview')}</p><h2>${t('Order summary')}</h2></div><span>${groups.length} ${t(groups.length === 1 ? '1 shop' : 'shops')}</span></div><div class="checkout-summary-shops">${groups.map(group => `<div><span>${group.shop}</span><strong>${group.shipping ? dollars(group.shipping) : t('Free')}</strong></div>`).join('')}</div><div class="checkout-summary-lines"><div><span>${t('Items subtotal')}</span><strong>${dollars(cartSummary.subtotal)}</strong></div>${cartSummary.compare ? `<div><span>${t('Sale savings')}</span><strong>−${dollars(cartSummary.compare)}</strong></div>` : ''}${voucherTotal ? `<div><span>${t('Voucher discount')}</span><strong>−${dollars(voucherTotal)}</strong></div>` : ''}<div><span>${t('Shipping')}</span><strong>${shippingTotal ? dollars(shippingTotal) : t('Free')}</strong></div></div><div class="checkout-summary-total"><span>${t('Estimated total')}</span><strong>${dollars(grandTotal)}</strong></div><button class="checkout-place-order" type="button" data-checkout-action="place-order" ${addressReady && !state.addressForm ? '' : 'disabled'}>${icon('check',18)} ${t('Place order')} ${icon('arrow',16)}</button><p class="checkout-summary-note">${t('No order was created and no payment was taken.')}</p><a class="checkout-return-link" href="/cart">${icon('arrow',14)} ${t('Back to cart')}</a></aside>`;
+  return `<div class="checkout-layout"><div class="checkout-main-column">${addressSection}${orderSections}${paymentSection}</div>${summarySection}</div>`;
+}
+
 function detail() {
   const id = decodeURIComponent(location.pathname.split('/').filter(Boolean).at(-1)); const p = products.find(x=>x.id===id) || products[0]; document.title = `${p.name} — ShopHub`;
   return `${header()}<main class="detail-main page-width"><div class="breadcrumbs"><a href="/">Discover</a>${icon('chevron',14)}<a href="/products?category=${encodeURIComponent(p.category)}">${p.category}</a>${icon('chevron',14)}<span>${p.name}</span></div><section class="detail-layout"><div class="gallery"><div class="gallery-main"><img id="main-image" src="${photo(p.image,1200)}" alt="${p.alt}"><span class="product-flag">${p.flag}</span><button class="gallery-save save-button" type="button" data-action="save" data-name="${p.name}" aria-pressed="false" aria-label="Save ${p.name}">${icon('heart',19)}</button></div><div class="gallery-thumbs"><button class="thumb is-active" data-image="${photo(p.image,1200)}" aria-label="View product image 1"><img src="${photo(p.image,180)}" alt=""></button><button class="thumb" data-image="${photo('photo-1523275335684-37898b6baf30',1200)}" aria-label="View product image 2"><img src="${photo('photo-1523275335684-37898b6baf30',180)}" alt=""></button><button class="thumb" data-image="${photo('photo-1526170375885-4d8ecf77b99f',1200)}" aria-label="View product image 3"><img src="${photo('photo-1526170375885-4d8ecf77b99f',180)}" alt=""></button><button class="thumb" data-image="${photo('photo-1490312278390-ab64016e0aa9',1200)}" aria-label="View product image 4"><img src="${photo('photo-1490312278390-ab64016e0aa9',180)}" alt=""></button></div><div class="gallery-caption">${icon('sparkle',15)} A real little something, chosen with care.</div></div>
@@ -127,18 +193,25 @@ function detail() {
 }
 
 const path = location.pathname; const app = document.querySelector('#app');
-app.innerHTML = path.startsWith('/products/') ? detail() : path.startsWith('/products') ? listing() : path.startsWith('/cart') ? cartPage() : home();
+app.innerHTML = path === '/checkout' || path === '/checkout/' ? checkoutPage() : path.startsWith('/products/') ? detail() : path.startsWith('/products') ? listing() : path.startsWith('/cart') ? cartPage() : home();
+const currentLanguage = getLanguage();
+document.documentElement.lang = currentLanguage;
+applyTranslations(app, currentLanguage);
+document.title = localizedPageTitle(path, location.search, currentLanguage) || translateText(document.title, currentLanguage);
+const description = document.querySelector('meta[name="description"]');
+if (description) description.content = localizedDescription(path, description.content, currentLanguage);
 const searchQuery = new URLSearchParams(location.search).get('q');
 if(searchQuery) document.querySelectorAll('.header-search input').forEach(input=>input.value=searchQuery);
 
 const toast = document.querySelector('#toast-region'); let toastTimer;
-function notify(message) { toast.innerHTML = `${icon('check',18)}<span>${message}</span>`; toast.classList.add('is-visible'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>toast.classList.remove('is-visible'),2400); }
+function notify(message) { toast.innerHTML = `${icon('check',18)}<span>${translateText(message)}</span>`; toast.classList.add('is-visible'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>toast.classList.remove('is-visible'),2400); }
 let currentRows = [];
 let currentPage = 1;
 function showPage(page) {
   currentPage = Math.max(1, Math.min(page, Math.ceil(currentRows.length / 9)));
   const start = (currentPage - 1) * 9;
   document.querySelector('#result-grid').innerHTML = currentRows.slice(start, start + 9).map(card).join('');
+  applyTranslations(document.querySelector('#result-grid'));
   document.querySelector('#shown-count').textContent = Math.min(start + 9, currentRows.length);
   const nav = document.querySelector('.pagination');
   nav.querySelector('[data-page="1"]').classList.toggle('page-current', currentPage === 1);
@@ -151,10 +224,13 @@ function updateResults() {
   const params = new URLSearchParams(location.search); const cat = [...document.querySelectorAll('input[name="category"]:checked')].map(e=>e.value); const shop = [...document.querySelectorAll('input[name="shop"]:checked')].map(e=>e.value); const rating = document.querySelector('input[name="rating"]:checked')?.value; const min = Number(document.querySelector('#min-price')?.value||0); const max = Number(document.querySelector('#max-price')?.value||9999); const query = params.get('q')||'';
   const rows = products.filter(p=>(!query||`${p.name} ${p.category} ${p.shop}`.toLowerCase().includes(query.toLowerCase()))&&(!cat.length||cat.includes(p.category))&&(!shop.length||shop.includes(p.shop))&&p.price>=min&&p.price<=max&&(!rating||Number(p.rating)>=Number(rating))&&(!params.has('deal')||p.old));
   const order=document.querySelector('#sort')?.value; if(order==='rating') rows.sort((a,b)=>Number(b.rating)-Number(a.rating)); if(order==='price-low') rows.sort((a,b)=>a.price-b.price); if(order==='price-high') rows.sort((a,b)=>b.price-a.price);
-  currentRows=rows; currentPage=1; showPage(1); document.querySelector('#result-grid').hidden=false; document.querySelector('#result-count').textContent=rows.length; document.querySelector('#no-results').hidden=Boolean(rows.length); document.querySelector('.pagination').hidden=rows.length<=9;
+  currentRows=rows; currentPage=1; showPage(1); document.querySelector('#result-grid').hidden=false; document.querySelector('#result-count').textContent=rows.length; document.querySelector('#no-results').hidden=Boolean(rows.length); applyTranslations(document.querySelector('#no-results')); document.querySelector('.pagination').hidden=rows.length<=9;
 }
 document.addEventListener('change',e=>{
   if(e.target.matches('#sort,input[name="category"],input[name="shop"],input[name="rating"]')) updateResults();
+  if(e.target.matches('[data-shipping]')){const state=readCheckoutState();state.shipping[e.target.dataset.shipping]=e.target.value;writeCheckoutState(state);refreshCheckout();}
+  if(e.target.matches('[data-payment]')){const state=readCheckoutState();state.payment=e.target.value;writeCheckoutState(state);refreshCheckout();}
+  if(e.target.matches('[name="checkout-address"]')){const state=readCheckoutState();state.selectedAddress=e.target.value;writeCheckoutState(state);refreshCheckout();}
   if(e.target.matches('[data-select-all],[data-shop-select],[data-item-select]')) {
     const cart=readCart();
     if(e.target.matches('[data-select-all]')) cart.items.forEach(item=>item.selected=e.target.checked);
@@ -166,10 +242,17 @@ document.addEventListener('change',e=>{
 function refreshCart(){
   const target=document.querySelector('#cart-content');if(!target)return;
   target.innerHTML=renderCartContent();
+  applyTranslations(target);
   const cart=readCart();
   document.querySelector('#cart-line-count').textContent=cart.items.length;
   const all=document.querySelector('[data-select-all]');if(all){all.indeterminate=cart.items.some(i=>i.selected)&&!cart.items.every(i=>i.selected);}
   document.querySelectorAll('[data-shop-select]').forEach(box=>{const rows=cart.items.filter(item=>products.find(p=>p.id===item.id)?.shop===box.dataset.shopSelect);box.indeterminate=rows.some(item=>item.selected)&&!rows.every(item=>item.selected);});
+  refreshBagCount();
+}
+function refreshCheckout(){
+  const target=document.querySelector('#checkout-content');if(!target)return;
+  target.innerHTML=renderCheckoutContent();
+  applyTranslations(target);
   refreshBagCount();
 }
 function addProductToCart(id,qty=1,variant=''){
@@ -180,7 +263,44 @@ function addProductToCart(id,qty=1,variant=''){
   cart.saved=cart.saved.filter(item=>item.id!==id);writeCart(cart);refreshBagCount();
 }
 if(path.startsWith('/cart'))refreshCart();
+if(path === '/checkout' || path === '/checkout/')refreshCheckout();
 document.addEventListener('click',e=>{
+  const languageButton=e.target.closest('[data-language]');
+  if(languageButton){setLanguage(languageButton.dataset.language);location.reload();return;}
+  const checkoutAction=e.target.closest('[data-checkout-action]');
+  if(checkoutAction){
+    const checkoutState=readCheckoutState();
+    const kind=checkoutAction.dataset.checkoutAction;
+    if(kind==='quantity'){
+      const cart=readCart();const item=cart.items.find(row=>row.id===checkoutAction.dataset.id);
+      if(item){item.qty=Math.max(1,Math.min(99,item.qty+Number(checkoutAction.dataset.delta)));writeCart(cart);refreshCheckout();}
+      return;
+    }
+    if(kind==='voucher'){
+      const cart=readCart();const shop=checkoutAction.dataset.shop;
+      cart.vouchers=cart.vouchers.includes(shop)?cart.vouchers.filter(name=>name!==shop):[...cart.vouchers,shop];
+      writeCart(cart);refreshCheckout();return;
+    }
+    if(kind==='edit-address')checkoutState.addressForm=checkoutAction.dataset.id;
+    if(kind==='add-address')checkoutState.addressForm='new';
+    if(kind==='cancel-address')checkoutState.addressForm=null;
+    if(kind==='save-address'){
+      const form=document.querySelector('#checkout-address-form');
+      if(!form?.reportValidity())return;
+      const values=Object.fromEntries(new FormData(form));
+      const existing=checkoutState.addresses.find(address=>address.id===checkoutState.addressForm);
+      if(existing)Object.assign(existing,values);
+      else{const address={...values,id:`address-${Date.now()}`,label:'Other'};checkoutState.addresses.push(address);checkoutState.selectedAddress=address.id;}
+      checkoutState.addressForm=null;
+    }
+    if(kind==='place-order'){
+      const address=checkoutState.addresses.find(entry=>entry.id===checkoutState.selectedAddress);
+      if(!cartTotals(readCart()).selected.length){refreshCheckout();return;}
+      if(!address||!['name','phone','street','ward','city'].every(key=>address[key]?.trim())){notify(t('Please complete every address field'));return;}
+      checkoutState.success=true;
+    }
+    writeCheckoutState(checkoutState);refreshCheckout();return;
+  }
   const action=e.target.closest('[data-action]'); const clear=e.target.closest('[data-clear]');
   const cartActionElement=e.target.closest('[data-cart-action]');
   if(cartActionElement){
@@ -191,7 +311,7 @@ document.addEventListener('click',e=>{
     if(cartAction==='save'&&item){cart.saved=cart.saved.filter(row=>row.id!==id);cart.saved.push({id});cart.items=cart.items.filter(row=>row.id!==id);notify(`${products.find(p=>p.id===id).name} saved for later`);}
     if(cartAction==='restore'){const saved=cart.saved.find(row=>row.id===id);if(saved){cart.saved=cart.saved.filter(row=>row.id!==id);const existing=cart.items.find(row=>row.id===id);if(existing)existing.selected=true;else cart.items.push({id,qty:1,selected:true,variant:`${products.find(p=>p.id===id).color} · Standard`});notify(`${products.find(p=>p.id===id).name} moved back to your cart`);}}
     if(cartAction==='voucher'){const shop=cartActionElement.dataset.shop;if(cart.vouchers.includes(shop)){cart.vouchers=cart.vouchers.filter(name=>name!==shop);notify('Shop voucher removed');}else{cart.vouchers.push(shop);notify('10% Sunday Objects voucher applied');}}
-    if(cartAction==='checkout'){const totals=cartTotals(cart);notify(`Checkout preview: ${totals.units} ${totals.units===1?'item':'items'} from ${totals.groups.filter(group=>group.items.length).length} shops. No order has been placed.`);}
+    if(cartAction==='checkout'){const totals=cartTotals(cart);if(totals.selected.length){location.href='/checkout';return;}}
     writeCart(cart);refreshCart();return;
   }
   if(clear){const u=new URL(location.href);u.searchParams.delete(clear.dataset.clear);location.href=u.pathname+u.search;return;}
