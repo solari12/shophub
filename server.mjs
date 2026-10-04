@@ -21,6 +21,8 @@ createServer(async (request, response) => {
         ? 'marketplace/products.html'
       : pathname === '/cart' || pathname === '/cart/'
         ? 'marketplace/cart.html'
+      : pathname === '/checkout' || pathname === '/checkout/'
+        ? 'marketplace/checkout.html'
         : /^\/products\/[^/]+\/?$/.test(pathname)
           ? 'marketplace/detail.html'
           : pathname.replace(/^\/+/, '');
