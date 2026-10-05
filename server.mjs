@@ -29,6 +29,8 @@ createServer(async (request, response) => {
         ? 'marketplace/wishlist.html'
       : pathname === '/reviews' || pathname === '/reviews/'
         ? 'marketplace/reviews.html'
+      : /^\/admin(?:\/[^/]+)?\/?$/.test(pathname)
+        ? 'marketplace/admin.html'
       : /^\/seller(?:\/[^/]+)?\/?$/.test(pathname)
         ? 'marketplace/seller.html'
       : pathname === '/orders' || pathname === '/orders/' || /^\/orders\/[^/]+\/?$/.test(pathname)
