@@ -23,6 +23,7 @@ const iconPaths = {
   sparkle: '<path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3Zm7 12 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z"/>',
   star: '<path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/>',
   close: '<path d="m18 6-12 12M6 6l12 12"/>',
+  archive: '<path d="M3 4h18v4H3z"/><path d="M5 8v12h14V8m-9 4h4"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   check: '<path d="m5 12 4 4L19 6"/>',
   plus: '<path d="M12 5v14m-7-7h14"/>',
