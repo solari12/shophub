@@ -283,6 +283,78 @@ function sellerProductsPage(){
   const categories=[...new Set(sellerProductSeed.map(row=>row.category))];
   return `${header()}<div class="seller-context"><div class="seller-context-inner"><span>${icon('grid',15)} ${t('Seller Portal')}</span><i></i><a href="/seller">${t('Dashboard')}</a>${icon('chevron',12)}<span>${t('Products')}</span><a href="/">${t('Back to customer marketplace')} ${icon('arrow',13)}</a></div></div><main class="seller-shell page-width">${sellerNav('products')}<div class="seller-main seller-products-main"><header class="seller-products-heading"><div><p class="eyebrow">${t('SELLER WORKSPACE')}</p><h1>${t('Products')}</h1><p>${t('Keep your listings, stock, and storefront details up to date.')}</p></div><button class="seller-add-product" type="button" data-seller-product-action="add">${icon('plus',17)} ${t('Add product')}</button></header><section class="seller-product-stats" id="seller-product-stats" aria-label="${t('Product summary')}">${sellerProductStats()}</section><section class="seller-product-manager"><div class="seller-product-toolbar"><div class="seller-product-search-wrap">${icon('search',17)}<label class="sr-only" for="seller-product-search">${t('Search products')}</label><input type="search" id="seller-product-search" value="${escapeSellerText(sellerProductUI.query)}" placeholder="${t('Search by product name or SKU')}" autocomplete="off"></div><div class="seller-product-filters"><label><span>${t('Category')}</span><select id="seller-category-filter"><option value="">${t('All categories')}</option>${categories.map(category=>`<option value="${escapeSellerText(category)}">${t(category)}</option>`).join('')}</select></label><label><span>${t('Status')}</span><select id="seller-status-filter"><option value="">${t('All statuses')}</option>${['Active','Draft','Archived'].map(status=>`<option value="${status}">${t(status)}</option>`).join('')}</select></label><label><span>${t('Stock')}</span><select id="seller-stock-filter"><option value="">${t('All stock levels')}</option>${['In stock','Low stock','Out of stock'].map(stock=>`<option value="${stock}">${t(stock)}</option>`).join('')}</select></label></div></div><div class="seller-product-toolbar-bottom"><span>${icon('info',14)} ${t('Filter products to find a listing quickly.')}</span><label class="seller-product-sort"><span>${t('Sort by')}</span><select id="seller-products-sort"><option value="updated">${t('Recently updated')}</option><option value="name">${t('Product name')}</option><option value="price">${t('Price: low to high')}</option><option value="stock">${t('Stock: low to high')}</option><option value="sales">${t('Best-selling')}</option><option value="rating">${t('Top rated')}</option></select></label></div><div id="seller-products-results" aria-live="polite">${sellerProductResults()}</div></section><p class="seller-prototype-note">${icon('info',13)} ${t('Product data and edits are saved for this browser session only.')}</p><div id="seller-product-modal-host">${sellerProductModal()}</div></div></main>${footer()}`;
 }
+
+const sellerOrderUI={query:'',status:'',payment:'',from:'',to:'',sort:'newest'};
+const sellerShopName='Sunday Objects';
+const sellerOrderStatusValues=['pending','confirmed','processing','shipping','delivered','cancelled'];
+function sellerScopedOrderItems(order){return order.items.filter(item=>orderProduct(item).shop===sellerShopName);}
+function sellerScopedOrders(){
+  return readOrders().filter(order=>sellerScopedOrderItems(order).length).map(order=>{
+    const items=sellerScopedOrderItems(order),subtotal=items.reduce((sum,item)=>sum+orderProduct(item).price*item.qty,0);
+    const shipping=orderShipping({...order,items});
+    const amounts=orderAmounts({...order,items,shippingFee:order.shippingFee??shipping.fee});
+    const payment=orderPayment(order);
+    return {...order,items,customer:order.customer||shipping.name,customerPhone:order.customerPhone||shipping.phone,subtotal,shippingFee:shipping.fee,total:amounts.total,shippingMethod:shipping.method,paymentMethod:payment.method,paymentStatus:payment.status,updatedAt:order.updatedAt||order.date};
+  });
+}
+function sellerOrderStatus(status){return status==='processing'?'Preparing':status==='pending'?'Pending confirmation':status[0].toUpperCase()+status.slice(1);}
+function sellerOrderStatusClass(status){return status==='processing'?'preparing':status==='pending'?'pending-confirmation':status;}
+function sellerPaymentLabel(status){return status==='Paid (sample)'?'Paid':status==='Awaiting confirmation'||status==='Payment due on delivery'||status==='Payment authorized (sample)'||status==='Not charged (sample)'?'Pending':status==='Failed'?'Failed':'Pending';}
+function sellerOrderStats(rows){
+  const waiting=rows.filter(order=>order.status==='pending').length;
+  const active=rows.filter(order=>['processing','shipping'].includes(order.status)).length;
+  const sales=rows.filter(order=>order.status!=='cancelled').reduce((sum,order)=>sum+order.total,0);
+  return `<div class="seller-order-stat"><span>${t('Seller orders')}</span><strong>${rows.length}</strong></div><div class="seller-order-stat"><span>${t('Awaiting confirmation')}</span><strong>${waiting}</strong></div><div class="seller-order-stat"><span>${t('In fulfillment')}</span><strong>${active}</strong></div><div class="seller-order-stat"><span>${t('Seller sales')}</span><strong>${sellerMoney(sales)}</strong></div>`;
+}
+function sellerOrderMatches(rows){
+  const query=sellerOrderUI.query.trim().toLowerCase();
+  let result=rows.filter(order=>{
+    const haystack=[order.id,order.customer||'',...order.items.map(item=>orderProduct(item).name)].join(' ').toLowerCase();
+    const payment=sellerPaymentLabel(order.paymentStatus).toLowerCase();
+    const date=order.date;
+    return (!query||haystack.includes(query))&&(!sellerOrderUI.status||order.status===sellerOrderUI.status)&&(!sellerOrderUI.payment||payment===sellerOrderUI.payment.toLowerCase())&&(!sellerOrderUI.from||date>=sellerOrderUI.from)&&(!sellerOrderUI.to||date<=sellerOrderUI.to);
+  });
+  const sorters={newest:(a,b)=>b.date.localeCompare(a.date),oldest:(a,b)=>a.date.localeCompare(b.date),high:(a,b)=>b.total-a.total,low:(a,b)=>a.total-b.total};
+  return result.sort(sorters[sellerOrderUI.sort]||sorters.newest);
+}
+function sellerOrderItemMarkup(item){
+  const product=orderProduct(item),line=product.price*item.qty;
+  return `<article class="seller-order-product"><a class="seller-order-product-image" href="/products/${encodeURIComponent(product.id)}"><img src="${photo(product.image,180)}" alt="${product.alt}" loading="lazy"></a><div class="seller-order-product-copy"><a href="/products/${encodeURIComponent(product.id)}">${product.name}</a><span>${t('Variant')}: ${item.variant}</span><small>${t('Quantity')}: ${item.qty} · ${t('Unit price')}: ${dollars(product.price)}</small></div><strong>${dollars(line)}</strong></article>`;
+}
+function sellerOrderRow(order){
+  const qty=order.items.reduce((sum,item)=>sum+item.qty,0),productsMarkup=order.items.map(item=>{const p=orderProduct(item);return `<span class="seller-order-product-chip"><img src="${photo(p.image,70)}" alt="" loading="lazy"><span>${p.name}</span><b>×${item.qty}</b></span>`;}).join('');
+  return `<article class="seller-order-card"><div class="seller-order-card-top"><a class="seller-order-id" href="/seller/orders?order=${encodeURIComponent(order.id)}">${order.id}</a><span class="seller-order-date">${orderDate(order.date)}</span><span class="seller-order-status seller-order-status-${sellerOrderStatusClass(order.status)}">${t(sellerOrderStatus(order.status))}</span></div><div class="seller-order-card-grid"><div class="seller-order-customer"><span>${t('Customer')}</span><strong>${escapeSellerText(order.customer||'ShopHub customer')}</strong></div><div class="seller-order-products"><span>${t('Products')} · ${qty} ${t('units')}</span>${productsMarkup}</div><div class="seller-order-meta"><div><span>${t('Payment status')}</span><strong class="seller-payment-state seller-payment-${sellerPaymentLabel(order.paymentStatus).toLowerCase()}">${t(sellerPaymentLabel(order.paymentStatus))}</strong></div><div><span>${t('Shipping method')}</span><strong>${t(order.shippingMethod)}</strong></div><div><span>${t('Last updated')}</span><strong>${orderDate(order.updatedAt)}</strong></div></div><div class="seller-order-amount"><span>${t('Seller total')}</span><strong>${sellerMoney(order.total)}</strong><small>${t('Seller subtotal')}: ${sellerMoney(order.subtotal)} · ${t('Shipping')}: ${order.shippingFee?sellerMoney(order.shippingFee):t('Free')}</small></div></div><footer class="seller-order-card-actions"><a class="seller-order-view" href="/seller/orders?order=${encodeURIComponent(order.id)}">${icon('external',14)} ${t('View seller order')}</a><a href="/orders/${encodeURIComponent(order.id)}">${t('Customer order reference')} ${icon('arrow',13)}</a></footer></article>`;
+}
+function sellerOrderTimeline(order){
+  const steps=['pending','confirmed','processing','shipping','delivered'],active=steps.indexOf(order.status);
+  if(order.status==='cancelled')return `<div class="seller-order-cancelled-state"><span>${icon('close',15)}</span><div><strong>${t('Order cancelled')}</strong><small>${t('Last updated')}: ${orderDate(order.updatedAt)}</small></div></div>`;
+  return `<ol class="seller-order-timeline">${steps.map((status,index)=>`<li class="${index<active?'is-complete':''} ${index===active?'is-current':''}"><i>${index<active?icon('check',11):index+1}</i><span>${t(sellerOrderStatus(status))}</span></li>`).join('')}</ol>`;
+}
+function sellerOrderDetail(order){
+  const recipient=orderShipping(order),allowed=order.status==='pending'?['confirmed','cancelled']:order.status==='confirmed'?['processing','cancelled']:order.status==='processing'?['shipping']:order.status==='shipping'?['delivered']:[];
+  const timeline=sellerOrderTimeline(order);
+  return `<section class="seller-order-detail"><div class="seller-order-detail-back"><a href="/seller/orders">${icon('arrow',14)} ${t('Back to seller orders')}</a><a href="/orders/${encodeURIComponent(order.id)}">${t('Customer order reference')} ${icon('external',13)}</a></div><header class="seller-order-detail-heading"><div><p class="eyebrow">${t('SELLER ORDER')}</p><h1>${order.id}</h1><p>${t('Placed on')} ${orderDate(order.date)} · ${t('Last updated')} ${orderDate(order.updatedAt)}</p></div><span class="seller-order-status seller-order-status-${sellerOrderStatusClass(order.status)}">${t(sellerOrderStatus(order.status))}</span></header><div class="seller-order-detail-layout"><div class="seller-order-detail-main"><section class="seller-order-panel"><div class="seller-order-panel-heading"><span>${icon('check',17)}</span><div><p class="eyebrow">${t('Order progress')}</p><h2>${t('Fulfillment timeline')}</h2></div></div>${timeline}${allowed.length?`<div class="seller-order-actions">${allowed.filter(status=>status!=='cancelled').map(status=>`<button type="button" class="seller-order-action-primary" data-seller-order-action="advance" data-id="${escapeSellerText(order.id)}" data-status="${status}">${icon('arrow',14)} ${t('Mark as {status}',{status:t(sellerOrderStatus(status))})}</button>`).join('')} ${allowed.includes('cancelled')?`<button type="button" class="seller-order-action-danger" data-seller-order-action="cancel" data-id="${escapeSellerText(order.id)}">${t('Cancel order')}</button>`:''}</div>`:''}</section><section class="seller-order-panel"><div class="seller-order-panel-heading"><span>${icon('bag',17)}</span><div><p class="eyebrow">${t('Products')}</p><h2>${t('Products in this order')}</h2></div></div><div class="seller-order-product-list">${order.items.map(sellerOrderItemMarkup).join('')}</div></section><section class="seller-order-panel seller-customer-panel"><div class="seller-order-panel-heading"><span>${icon('user',17)}</span><div><p class="eyebrow">${t('Customer')}</p><h2>${escapeSellerText(order.customer||'ShopHub customer')}</h2></div></div><div class="seller-customer-contact"><div><span>${t('Phone number')}</span><strong>${recipient.phone}</strong></div><div><span>${t('Delivery city')}</span><strong>${recipient.address.split(',').slice(-2).join(',').trim()}</strong></div><div class="seller-customer-address"><span>${t('Delivery address')}</span><strong>${recipient.address}</strong></div><small>${t('Customer details are limited to fulfillment needs in this prototype.')}</small></div></section></div><aside class="seller-order-detail-aside"><section class="seller-order-panel"><p class="eyebrow">${t('Seller order summary')}</p><h2>${t('Seller total')}</h2><div class="seller-order-summary-lines"><div><span>${t('Seller subtotal')}</span><strong>${sellerMoney(order.subtotal)}</strong></div><div><span>${t('Shipping')}</span><strong>${order.shippingFee?sellerMoney(order.shippingFee):t('Free')}</strong></div><div class="seller-order-summary-total"><span>${t('Seller total')}</span><strong>${sellerMoney(order.total)}</strong></div></div><div class="seller-payment-detail"><span>${t('Payment status')}</span><strong class="seller-payment-state seller-payment-${sellerPaymentLabel(order.paymentStatus).toLowerCase()}">${t(sellerPaymentLabel(order.paymentStatus))}</strong><small>${t('Payment is read-only in this prototype.')}</small></div><div class="seller-order-shipping-detail"><span>${t('Shipping method')}</span><strong>${t(order.shippingMethod)}</strong></div><p class="seller-order-prototype-note">${icon('info',13)} ${t('Seller totals include only products sold by Sunday Objects.')}</p></section></aside></div></section>`;
+}
+function sellerOrderListBody(){
+  const rows=sellerScopedOrders(),matched=sellerOrderMatches(rows);
+  return !rows.length?`<div class="seller-orders-empty"><span>${icon('bag',25)}</span><h2>${t('No seller orders yet')}</h2><p>${t('Orders containing Sunday Objects products will appear here.')}</p></div>`:!matched.length?`<div class="seller-orders-empty"><span>${icon('search',24)}</span><h2>${t('No orders match these filters')}</h2><p>${t('Try a different search, status, payment, or date range.')}</p><button type="button" data-seller-order-action="reset">${t('Clear filters')}</button></div>`:matched.map(sellerOrderRow).join('');
+}
+function sellerOrderResults(){
+  const rows=sellerScopedOrders(),matched=sellerOrderMatches(rows);
+  const selectedId=new URLSearchParams(location.search).get('order'),selected=rows.find(order=>order.id===selectedId);
+  if(selected)return sellerOrderDetail(selected);
+  const statusOptions=['pending','confirmed','processing','shipping','delivered','cancelled'];
+  const resultContent=sellerOrderListBody();
+  return `<section class="seller-orders-dashboard"><header class="seller-orders-heading"><div><p class="eyebrow">${t('SELLER WORKSPACE')}</p><h1>${t('Orders')}</h1><p>${t('Manage Sunday Objects orders from confirmation through delivery.')}</p></div><span class="seller-orders-shop-chip"><span class="shop-avatar">SO</span><span><strong>Sunday Objects</strong><small>${t('Current seller shop')}</small></span></span></header><section class="seller-order-stats" aria-label="${t('Seller order summary')}">${sellerOrderStats(rows)}</section><section class="seller-order-manager"><div class="seller-order-toolbar"><label class="seller-order-search">${icon('search',17)}<span class="sr-only">${t('Search seller orders')}</span><input id="seller-order-search" type="search" value="${escapeSellerText(sellerOrderUI.query)}" placeholder="${t('Search by order ID, customer, or product')}" autocomplete="off"></label><div class="seller-order-filters"><label><span>${t('Order status')}</span><select id="seller-order-status"><option value="">${t('All statuses')}</option>${statusOptions.map(status=>`<option value="${status}" ${sellerOrderUI.status===status?'selected':''}>${t(sellerOrderStatus(status))}</option>`).join('')}</select></label><label><span>${t('Payment status')}</span><select id="seller-order-payment"><option value="">${t('All payment statuses')}</option>${['Paid','Pending','Refunded','Failed'].map(status=>`<option value="${status}" ${sellerOrderUI.payment===status?'selected':''}>${t(status)}</option>`).join('')}</select></label><label><span>${t('From date')}</span><input id="seller-order-from" type="date" value="${sellerOrderUI.from}"></label><label><span>${t('To date')}</span><input id="seller-order-to" type="date" value="${sellerOrderUI.to}"></label></div><label class="seller-order-sort"><span>${t('Sort by')}</span><select id="seller-order-sort"><option value="newest" ${sellerOrderUI.sort==='newest'?'selected':''}>${t('Newest')}</option><option value="oldest" ${sellerOrderUI.sort==='oldest'?'selected':''}>${t('Oldest')}</option><option value="high" ${sellerOrderUI.sort==='high'?'selected':''}>${t('Highest amount')}</option><option value="low" ${sellerOrderUI.sort==='low'?'selected':''}>${t('Lowest amount')}</option></select></label></div><div class="seller-orders-results-heading"><strong>${t('Seller orders')}</strong><span>${matched.length} ${t(matched.length===1?'order':'orders')}</span></div><div id="seller-order-results-list" class="seller-order-results-list" aria-live="polite">${resultContent}</div></section><p class="seller-prototype-note">${icon('info',13)} ${t('Order updates are saved for this browser session. Payment information is read-only sample data.')}</p></section>`;
+}
+function sellerOrdersPage(){
+  const path=location.pathname.replace(/\/$/,'');
+  const detailId=new URLSearchParams(location.search).get('order');
+  const title=detailId?t('Seller order details'):t('Orders');
+  document.title=detailId?`${title} · ${detailId} — ShopHub`:`${title} — ShopHub`;
+  return `${header()}<div class="seller-context"><div class="seller-context-inner"><span>${icon('grid',15)} ${t('Seller Portal')}</span><i></i><a href="/seller">${t('Dashboard')}</a>${icon('chevron',12)}<span>${title}</span><a href="/">${t('Back to customer marketplace')} ${icon('arrow',13)}</a></div></div><main class="seller-shell page-width">${sellerNav('orders')}<div class="seller-main seller-orders-main" id="seller-orders-main">${sellerOrderResults()}</div></main>${footer()}`;
+}
+function refreshSellerOrderResults(){const host=document.querySelector('#seller-order-results-list');if(host)host.innerHTML=sellerOrderListBody();const heading=document.querySelector('.seller-orders-results-heading span');if(heading){const matched=sellerOrderMatches(sellerScopedOrders());heading.textContent=`${matched.length} ${t(matched.length===1?'order':'orders')}`;}}
 let sellerProductReturnFocus=null;
 function refreshSellerProductResults(){const target=document.querySelector('#seller-products-results');if(target)target.innerHTML=sellerProductResults();}
 function refreshSellerProductStats(){const target=document.querySelector('#seller-product-stats');if(target)target.innerHTML=sellerProductStats();}
@@ -323,6 +395,7 @@ function sellerProductRows() {
 function sellerDashboardContent(){
   const path=location.pathname.replace(/\/$/,'');
   const section=path.split('/')[2];
+  if(section==='orders')return sellerOrdersPage();
   if(section==='products')return sellerProductsPage();
   if(section){const names={products:'Products',orders:'Orders',reviews:'Reviews',analytics:'Analytics',settings:'Shop settings'};const navKey=section==='settings'?'settings':section;return `${header()}<main class="seller-shell page-width">${sellerNav(navKey)}<section class="seller-coming"><div class="seller-coming-icon">${icon('sparkle',24)}</div><p class="eyebrow">${t('SELLER WORKSPACE')}</p><h1>${t('{section} is coming next',{section:t(names[section]||'Seller page')})}</h1><p>${t('This prototype page is not part of the current build yet.')}</p><a class="seller-primary" href="/seller">${icon('arrow',16)} ${t('Back to seller dashboard')}</a></section></main>${footer()}`;}
   const chartPoints=sellerSales.map((value,index)=>`${35+index*90},${145-value*1.35}`).join(' ');
@@ -658,6 +731,26 @@ if(path.startsWith('/cart'))refreshCart();
 if(path==='/wishlist'||path==='/wishlist/')refreshWishlist();
 if(path === '/checkout' || path === '/checkout/')refreshCheckout();
 document.addEventListener('click',e=>{
+  const sellerOrderAction=e.target.closest('[data-seller-order-action]');
+  if(sellerOrderAction){
+    const kind=sellerOrderAction.dataset.sellerOrderAction;
+    if(kind==='reset'){Object.assign(sellerOrderUI,{query:'',status:'',payment:'',from:'',to:'',sort:'newest'});const main=document.querySelector('.seller-orders-main');if(main)main.innerHTML=sellerOrderResults();return;}
+    const orders=readOrders(),order=orders.find(row=>row.id===sellerOrderAction.dataset.id),next=sellerOrderAction.dataset.status;
+    if(!order)return;
+    const valid={pending:['confirmed','cancelled'],confirmed:['processing','cancelled'],processing:['shipping'],shipping:['delivered']};
+    if(!valid[order.status]?.includes(kind==='cancel'?'cancelled':next))return;
+    if(kind==='cancel'&&!window.confirm(t('Cancel this seller order? This cannot be undone.')))return;
+    if(kind==='cancel'){
+      const payment=orderPayment(order);order.paymentMethod=order.paymentMethod||payment.method;order.paymentStatus=order.paymentStatus||payment.status;
+      const wasConfirmed=order.status==='confirmed';order.status='cancelled';order.cancelledDate=sellerToday();order.cancelledAfterConfirmation=wasConfirmed;
+    }else{
+      const payment=orderPayment(order);order.paymentMethod=order.paymentMethod||payment.method;order.paymentStatus=order.paymentStatus||payment.status;
+      order.status=next;
+    }
+    order.updatedAt=sellerToday();writeOrders(orders);
+    const main=document.querySelector('.seller-orders-main');if(main)main.innerHTML=sellerOrderResults();
+    notify(t(kind==='cancel'?'Seller order cancelled':'Fulfillment status updated'));return;
+  }
   const languageButton=e.target.closest('[data-language]');
   if(languageButton){setLanguage(languageButton.dataset.language);location.reload();return;}
   const wishlistAction=e.target.closest('[data-wishlist-action]');
@@ -799,6 +892,11 @@ document.addEventListener('click',e=>{
     else{record.status='draft';record.editing=false;}
     record.errors=[];writeReviews(reviews);location.href='/reviews';return;
   }
+});
+document.addEventListener('input',e=>{if(e.target.id==='seller-order-search'){sellerOrderUI.query=e.target.value;refreshSellerOrderResults();}});
+document.addEventListener('change',e=>{
+  const controls={'seller-order-status':'status','seller-order-payment':'payment','seller-order-from':'from','seller-order-to':'to','seller-order-sort':'sort'};
+  const field=controls[e.target.id];if(!field)return;sellerOrderUI[field]=e.target.value;refreshSellerOrderResults();
 });
 document.addEventListener('input',e=>{
   if(e.target.id!=='review-text'&&e.target.id!=='review-title')return;
